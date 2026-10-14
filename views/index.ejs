@@ -580,98 +580,15 @@
     return result;
   }
 
+  function getFullDetailSheetRows() {
+    const flattened = deviceRows.map(row => flattenObject(row));
+    const keys = [...new Set(flattened.flatMap(row => Object.keys(row)))];
 
-function getFullDetailSheetRows() {
-  const result = [];
-
-  deviceRows.forEach((device, index) => {
-    const flatData = {};
-
-    // Har device ke nested JSON ko individual columns mein convert karo
-    flattenObject(device, "", flatData);
-
-    result.push({
-      "Device No.": index + 1,
-      ...flatData
-    });
-  });
-
-  return result;
-}
-
-function flattenObject(value, prefix = "", result = {}) {
-  if (value === null || value === undefined || value === "") {
-    result[prefix || "Value"] = "Not provided";
-    return result;
+    return [
+      keys,
+      ...flattened.map(row => keys.map(key => row[key] ?? ""))
+    ];
   }
-
-  // Actor name fields ka JSON readable text mein convert karo
-  const actorFields = [
-    "MF_ACTOR_NAMES",
-    "ACTOR_ABBREVIATED_NAMES",
-    "AR_ACTOR_NAMES"
-  ];
-
-  if (actorFields.includes(prefix.split(".").pop())) {
-    result[prefix] = formatActorNames(value);
-    return result;
-  }
-
-  // JSON string ko object/array mein parse karne ki koshish
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-
-    if (
-      (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-      (trimmed.startsWith("[") && trimmed.endsWith("]"))
-    ) {
-      try {
-        value = JSON.parse(trimmed);
-      } catch {
-        result[prefix || "Value"] = value;
-        return result;
-      }
-    } else {
-      result[prefix || "Value"] = value;
-      return result;
-    }
-  }
-
-  // Nested object ko individual columns mein flatten karo
-  if (typeof value === "object" && !Array.isArray(value)) {
-    const entries = Object.entries(value);
-
-    if (entries.length === 0) {
-      result[prefix || "Value"] = "Not provided";
-      return result;
-    }
-
-    entries.forEach(([key, childValue]) => {
-      const newKey = prefix ? `${prefix}.${key}` : key;
-      flattenObject(childValue, newKey, result);
-    });
-
-    return result;
-  }
-
-  // Arrays ke har item ko individual column mein rakho
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      result[prefix || "Value"] = "Not provided";
-      return result;
-    }
-
-    value.forEach((item, index) => {
-      const newKey = `${prefix}[${index + 1}]`;
-      flattenObject(item, newKey, result);
-    });
-
-    return result;
-  }
-
-  result[prefix || "Value"] = value;
-  return result;
-}
 
   function getMainTableRows() {
     const table = document.getElementById("deviceTable");
